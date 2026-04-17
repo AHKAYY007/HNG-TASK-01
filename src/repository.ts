@@ -13,7 +13,7 @@ export type ProfileRecord = typeof profiles.$inferSelect;
 export type NewProfileRecord = typeof profiles.$inferInsert;
 
 function ciEquals(column: unknown, value: string) {
-  return eq(sql`lower(${column as never})`, value.trim().toLowerCase());
+  return sql<boolean>`lower(${column as never}) = ${value.trim().toLowerCase()}`;
 }
 
 export async function findProfileById(
