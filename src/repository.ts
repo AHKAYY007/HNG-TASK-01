@@ -1,5 +1,4 @@
-import { and, eq, ilike } from "drizzle-orm";
-import type { Database } from "./db/client";
+import { and, eq, sql } from "drizzle-orm";
 import { getDb } from "./db/client";
 import { profiles } from "./db/schema";
 import type { AgeGroup } from "./utils";
@@ -12,6 +11,10 @@ type ProfileFilter = {
 
 export type ProfileRecord = typeof profiles.$inferSelect;
 export type NewProfileRecord = typeof profiles.$inferInsert;
+
+function ciEquals(column: unknown, value: string) {
+  return eq(sql`lower(${column as never})`, value.trim().toLowerCase());
+}
 
 export async function findProfileById(
   env: { DB: D1Database },
@@ -34,7 +37,7 @@ export async function findProfileByName(
   const result = await db
     .select()
     .from(profiles)
-    .where(ilike(profiles.name, name))
+    .where(ciEquals(profiles.name, name))
     .limit(1);
   return result[0];
 }
@@ -47,15 +50,15 @@ export async function findProfiles(
   const conditions = [];
 
   if (filters.gender) {
-    conditions.push(ilike(profiles.gender, filters.gender));
+    conditions.push(ciEquals(profiles.gender, filters.gender));
   }
 
   if (filters.countryId) {
-    conditions.push(ilike(profiles.countryId, filters.countryId));
+    conditions.push(ciEquals(profiles.countryId, filters.countryId));
   }
 
   if (filters.ageGroup) {
-    conditions.push(ilike(profiles.ageGroup, filters.ageGroup));
+    conditions.push(ciEquals(profiles.ageGroup, filters.ageGroup));
   }
 
   if (conditions.length === 0) {
