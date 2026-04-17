@@ -9,19 +9,48 @@ const envSchema = z.object({
 
 type EnvInput = Record<string, string | undefined>;
 
-const rawEnv: EnvInput =
-  typeof process !== "undefined" && process.env
-    ? (process.env as EnvInput)
-    : typeof globalThis !== "undefined" && "env" in globalThis
-      ? ((globalThis as typeof globalThis & { env?: EnvInput }).env ?? {})
-      : {};
+const isCloudflareEnv = (
+  value: unknown,
+): value is { DATABASE_URL?: string; NODE_ENV?: string } => {
+  return typeof value === "object" && value !== null;
+};
 
-const envParsed = envSchema.safeParse(rawEnv);
+function getRawEnv(): EnvInput {
+  if (typeof Bun !== "undefined" && Bun.env) {
+    return Bun.env as EnvInput;
+  }
 
-if (!envParsed.success) {
-  console.error("Invalid environment variables:", envParsed.error.format());
-  throw new Error("Invalid environment variables");
+  if (typeof process !== "undefined" && process.env) {
+    return process.env as EnvInput;
+  }
+
+  if (typeof globalThis !== "undefined") {
+    const globalEnv = (
+      globalThis as typeof globalThis & {
+        env?: unknown;
+      }
+    ).env;
+
+    if (isCloudflareEnv(globalEnv)) {
+      return {
+        DATABASE_URL: globalEnv.DATABASE_URL,
+        NODE_ENV: globalEnv.NODE_ENV,
+      };
+    }
+  }
+
+  return {};
 }
 
-export const env = envParsed.data;
-export type Env = typeof env;
+export function getEnv() {
+  const parsed = envSchema.safeParse(getRawEnv());
+
+  if (!parsed.success) {
+    console.error("Invalid environment variables:", parsed.error.format());
+    throw new Error("Invalid environment variables");
+  }
+
+  return parsed.data;
+}
+
+export type Env = ReturnType<typeof getEnv>;

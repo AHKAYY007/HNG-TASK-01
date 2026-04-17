@@ -1,18 +1,36 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { env } from "../env";
+import { getEnv } from "../env";
 import { profiles } from "./schema";
 
-const connectionString = env.DATABASE_URL;
+let dbInstance: ReturnType<typeof drizzle> | null = null;
 
-const client = postgres(connectionString, {
-  prepare: false,
-});
+export function getDb() {
+  if (dbInstance) {
+    return dbInstance;
+  }
 
-export const db = drizzle(client, {
-  schema: {
-    profiles,
+  const { DATABASE_URL } = getEnv();
+
+  const client = postgres(DATABASE_URL, {
+    prepare: false,
+  });
+
+  dbInstance = drizzle(client, {
+    schema: {
+      profiles,
+    },
+  });
+
+  return dbInstance;
+}
+
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get(_target, prop) {
+    const instance = getDb();
+    const value = instance[prop as keyof typeof instance];
+    return typeof value === "function" ? value.bind(instance) : value;
   },
-});
+}) as ReturnType<typeof drizzle>;
 
-export type Database = typeof db;
+export type Database = ReturnType<typeof drizzle>;

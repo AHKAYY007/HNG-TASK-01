@@ -1,5 +1,5 @@
 import { and, eq, ilike } from "drizzle-orm";
-import { db } from "./db/client";
+import { getDb } from "./db/client";
 import { profiles } from "./db/schema";
 import type { AgeGroup } from "./utils";
 
@@ -15,6 +15,7 @@ export type NewProfileRecord = typeof profiles.$inferInsert;
 export async function findProfileById(
   id: string,
 ): Promise<ProfileRecord | undefined> {
+  const db = getDb();
   const result = await db
     .select()
     .from(profiles)
@@ -27,6 +28,7 @@ export async function findProfileById(
 export async function findProfileByName(
   name: string,
 ): Promise<ProfileRecord | undefined> {
+  const db = getDb();
   const result = await db
     .select()
     .from(profiles)
@@ -39,6 +41,7 @@ export async function findProfileByName(
 export async function findProfiles(
   filters: ProfileFilter = {},
 ): Promise<ProfileRecord[]> {
+  const db = getDb();
   const conditions = [];
 
   if (filters.gender) {
@@ -66,11 +69,13 @@ export async function findProfiles(
 export async function createProfile(
   profile: NewProfileRecord,
 ): Promise<ProfileRecord> {
+  const db = getDb();
   const result = await db.insert(profiles).values(profile).returning();
   return result[0];
 }
 
 export async function deleteProfileById(id: string): Promise<boolean> {
+  const db = getDb();
   const result = await db
     .delete(profiles)
     .where(eq(profiles.id, id))
