@@ -257,20 +257,22 @@ NODE_ENV="development"
 
 ### Install dependencies
 ```sh
-bun install
+npm install
+# or
+yarn install
 ```
 
 ### Run the app locally
 ```sh
-bun run dev
+npm run dev
 ```
 
 ### Database commands
 ```sh
-bun run db:generate
-bun run db:migrate
-bun run db:push
-bun run db:studio
+npm run db:generate
+npm run db:migrate
+npm run db:push
+npm run db:studio
 ```
 
 ---
@@ -305,49 +307,51 @@ Make sure to deploy the API and submit:
 - your live base URL
 - your GitHub repository link
 
-## Deployment on Cloudflare Workers
+## Deployment on Railway
 
-This app can be deployed to **Cloudflare Workers** using **Cloudflare D1** as the database.
+This app can be deployed to **Railway** with **PostgreSQL** as the database.
 
-### D1 setup
+### Railway setup
 
-Create a D1 database in Cloudflare and bind it to the Worker as `DB`.
-
-Example `wrangler` commands:
-
-```sh
-wrangler d1 create hng-task-1-db
-wrangler d1 execute hng-task-1-db --file=./src/db/migrations/0001_initial.sql
-```
-
-Then update `wrangler.toml` with the real `database_id` from Cloudflare.
-
-### Worker setup
-- Entry point: `src/index.ts`
-- Runtime: Hono running on Cloudflare Workers
-- Compatibility: enable `nodejs_compat` if you use any Node-style APIs
-
-### Wrangler config
-Use a `wrangler.toml` file similar to:
-
-```/dev/null/wrangler.toml#L1-12
-name = "hng-task-1"
-main = "src/index.ts"
-compatibility_date = "2026-04-17"
-compatibility_flags = ["nodejs_compat"]
-
-[[d1_databases]]
-binding = "DB"
-database_name = "hng-task-1-db"
-database_id = "YOUR_D1_DATABASE_ID"
-
-[vars]
-NODE_ENV = "production"
-```
+1. Create a new project on [Railway](https://railway.app)
+2. Add a PostgreSQL plugin from the Railway dashboard
+3. Create a Node.js service from your GitHub repository
+4. Configure environment variables
 
 ### Environment variables
-Set the following in Cloudflare:
-- `NODE_ENV`
+
+Set the following in Railway:
+- `DATABASE_URL` — PostgreSQL connection string (auto-provided by Railway PostgreSQL plugin)
+- `NODE_ENV` — set to `production`
+- `PORT` — optional (defaults to `3000`, Railway automatically assigns port)
+
+The PostgreSQL plugin will automatically inject `DATABASE_URL` into your environment.
+
+### Build and start commands
+
+Railway will automatically detect this is a Node.js project from `package.json`.
+
+**Build command:**
+```sh
+npm run build
+```
+
+**Start command:**
+```sh
+npm start
+```
+
+### Database migration on Railway
+
+After connecting your PostgreSQL plugin:
+
+1. SSH into your Railway environment or run migrations through the Railway dashboard
+2. Run migrations with Drizzle:
+```sh
+npm run db:push
+```
+
+This will create the necessary tables in your PostgreSQL database.
 
 ### D1 binding
 Bind your D1 database to the Worker as:

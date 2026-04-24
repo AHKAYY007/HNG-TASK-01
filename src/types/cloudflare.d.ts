@@ -1,10 +1,8 @@
-/// <reference types="@cloudflare/workers-types" />
-
-declare global {
-  interface CloudflareEnv {
+// Environment variable types for Railway deployment
+declare namespace NodeJS {
+  interface ProcessEnv {
     DATABASE_URL: string;
+    PORT?: string;
     NODE_ENV?: "development" | "test" | "production";
   }
 }
-
-export {};

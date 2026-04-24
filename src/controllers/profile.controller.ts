@@ -50,10 +50,6 @@ type ProfileListItem = {
   country_id: string;
 };
 
-type WorkerEnv = {
-  DB: D1Database;
-};
-
 function toProfileResponse(profile: ProfileRecord): ProfileResponse {
   return {
     id: profile.id,
@@ -65,7 +61,7 @@ function toProfileResponse(profile: ProfileRecord): ProfileResponse {
     age_group: profile.ageGroup,
     country_id: profile.countryId,
     country_probability: profile.countryProbability,
-    created_at: profile.createdAt,
+    created_at: profile.createdAt.toISOString(),
   };
 }
 
@@ -94,7 +90,7 @@ function isApiError(
 const profileCache = new Map<string, ProfileResponse>();
 const inFlightProfileCreations = new Map<string, Promise<ProfileResponse>>();
 
-async function createOrGetProfile(env: WorkerEnv, rawName: string) {
+async function createOrGetProfile(rawName: string) {
   const normalizedName = normalizeName(rawName);
 
   const cached = profileCache.get(normalizedName);
@@ -108,7 +104,7 @@ async function createOrGetProfile(env: WorkerEnv, rawName: string) {
     };
   }
 
-  const existing = await findProfileByName(env, normalizedName);
+  const existing = await findProfileByName(normalizedName);
   if (existing) {
     const response = toProfileResponse(existing);
     profileCache.set(normalizedName, response);
@@ -147,10 +143,10 @@ async function createOrGetProfile(env: WorkerEnv, rawName: string) {
       ageGroup: externalData.ageGroup,
       countryId: externalData.countryId,
       countryProbability: externalData.countryProbability,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
     };
 
-    const created = await createProfile(env, newProfile);
+    const created = await createProfile(newProfile);
     const response = toProfileResponse(created);
     profileCache.set(normalizedName, response);
     return response;
@@ -172,9 +168,7 @@ async function createOrGetProfile(env: WorkerEnv, rawName: string) {
   }
 }
 
-export async function createProfileController(
-  c: Context<{ Bindings: WorkerEnv }>,
-) {
+export async function createProfileController(c: Context) {
   try {
     const body = await c.req.json().catch(() => null);
     const parsed = createProfileRequestSchema.safeParse(body);
@@ -205,7 +199,7 @@ export async function createProfileController(
       );
     }
 
-    const result = await createOrGetProfile(c.env, rawName);
+    const result = await createOrGetProfile(rawName);
 
     if (result.alreadyExists) {
       return c.json<ApiSuccessWithMessage<ProfileResponse>>(
@@ -247,12 +241,10 @@ export async function createProfileController(
   }
 }
 
-export async function getProfileByIdController(
-  c: Context<{ Bindings: WorkerEnv }>,
-) {
+export async function getProfileByIdController(c: Context) {
   const id = c.req.param("id")!;
 
-  const profile = await findProfileById(c.env, id);
+  const profile = await findProfileById(id);
 
   if (!profile) {
     return c.json<ApiError>(
@@ -270,14 +262,12 @@ export async function getProfileByIdController(
   });
 }
 
-export async function listProfilesController(
-  c: Context<{ Bindings: WorkerEnv }>,
-) {
+export async function listProfilesController(c: Context) {
   const gender = c.req.query("gender");
   const countryId = c.req.query("country_id");
   const ageGroup = c.req.query("age_group");
 
-  const rows = await findProfiles(c.env, {
+  const rows = await findProfiles({
     gender: gender?.trim().toLowerCase(),
     countryId: countryId?.trim().toLowerCase(),
     ageGroup: ageGroup?.trim().toLowerCase() as
@@ -295,12 +285,10 @@ export async function listProfilesController(
   });
 }
 
-export async function deleteProfileController(
-  c: Context<{ Bindings: WorkerEnv }>,
-) {
+export async function deleteProfileController(c: Context) {
   const id = c.req.param("id")!;
 
-  const deleted = await deleteProfileById(c.env, id);
+  const deleted = await deleteProfileById(id);
 
   if (!deleted) {
     return c.json<ApiError>(

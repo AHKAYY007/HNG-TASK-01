@@ -4,20 +4,14 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
+  DATABASE_URL: z.string().url(),
+  PORT: z.coerce.number().default(3000),
 });
 
 type EnvInput = Record<string, string | undefined>;
 
 function getRawEnv(): EnvInput {
-  if (typeof Bun !== "undefined" && Bun.env) {
-    return Bun.env as EnvInput;
-  }
-
-  if (typeof process !== "undefined" && process.env) {
-    return process.env as EnvInput;
-  }
-
-  return {};
+  return process.env as EnvInput;
 }
 
 export function getEnv() {

@@ -6,18 +6,23 @@ node_modules/
 .env.*
 !.env.example
 
-# bun
-bun.lockb
-bunfig.toml
+# build output
+dist/
+build/
 
-# cloudflare workers
-.dev.vars
-.worker
-.vercel
-.wrangler
-.wrangler/
-.wrangler.toml
-.wrangler.toml.backup
+# npm lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
 
 # build artifacts
 dist/

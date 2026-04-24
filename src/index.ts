@@ -1,11 +1,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { serve } from "@hono/node-server";
 import {
   createProfileController,
   deleteProfileController,
   getProfileByIdController,
   listProfilesController,
 } from "./controllers/profile.controller";
+import { getEnv } from "./env";
 
 const app = new Hono();
 
@@ -46,6 +48,17 @@ app.onError((err, c) => {
   );
 });
 
-export default app;
+const env = getEnv();
+const port = env.PORT;
+
+serve(
+  {
+    fetch: app.fetch,
+    port,
+  },
+  (info) => {
+    console.log(`✅ Server running on port ${info.port}`);
+  },
+);
 
 export type AppType = typeof app;

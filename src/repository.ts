@@ -17,10 +17,9 @@ function ciEquals(column: unknown, value: string) {
 }
 
 export async function findProfileById(
-  env: { DB: D1Database },
   id: string,
 ): Promise<ProfileRecord | undefined> {
-  const db = getDb(env);
+  const db = getDb();
   const result = await db
     .select()
     .from(profiles)
@@ -30,10 +29,9 @@ export async function findProfileById(
 }
 
 export async function findProfileByName(
-  env: { DB: D1Database },
   name: string,
 ): Promise<ProfileRecord | undefined> {
-  const db = getDb(env);
+  const db = getDb();
   const result = await db
     .select()
     .from(profiles)
@@ -43,10 +41,9 @@ export async function findProfileByName(
 }
 
 export async function findProfiles(
-  env: { DB: D1Database },
   filters: ProfileFilter = {},
 ): Promise<ProfileRecord[]> {
-  const db = getDb(env);
+  const db = getDb();
   const conditions = [];
 
   if (filters.gender) {
@@ -72,19 +69,17 @@ export async function findProfiles(
 }
 
 export async function createProfile(
-  env: { DB: D1Database },
   profile: NewProfileRecord,
 ): Promise<ProfileRecord> {
-  const db = getDb(env);
+  const db = getDb();
   const result = await db.insert(profiles).values(profile).returning();
   return result[0];
 }
 
 export async function deleteProfileById(
-  env: { DB: D1Database },
   id: string,
 ): Promise<boolean> {
-  const db = getDb(env);
+  const db = getDb();
   const result = await db
     .delete(profiles)
     .where(eq(profiles.id, id))
